@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>알림 목록</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .notification-card {
+            border-left: 4px solid #007bff;
+            margin-bottom: 15px;
+            transition: transform 0.2s ease;
+        }
+        .notification-card:hover {
+            transform: translateX(5px);
+        }
+        .notification-card.warning {
+            border-left-color: #ffc107;
+        }
+        .notification-card.error {
+            border-left-color: #dc3545;
+        }
+        .status-badge {
+            font-size: 0.8em;
+        }
+        .type-badge {
+            font-size: 0.8em;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <!-- 네비게이션 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-bell me-2"></i>알림 시스템
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">대시보드</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/notifications/create">알림 작성</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/notifications/list">알림 목록</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/test">API 테스트</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h1 class="mb-3">
+                    <i class="fas fa-list me-2"></i>알림 목록
+                </h1>
+                <p class="text-muted">전송된 모든 알림을 확인하고 관리할 수 있습니다.</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="/notifications/create" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>새 알림 작성
+                </a>
+            </div>
+        </div>
+
+        <!-- 필터 및 통계 -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-primary active" onclick="filterByStatus('all')">전체</button>
+                    <button type="button" class="btn btn-outline-warning" onclick="filterByStatus('PENDING')">대기 중</button>
+                    <button type="button" class="btn btn-outline-success" onclick="filterByStatus('SENT')">전송 완료</button>
+                    <button type="button" class="btn btn-outline-danger" onclick="filterByStatus('FAILED')">전송 실패</button>
+                </div>
+            </div>
+            <div class="col-md-4 text-end">
+                <span class="badge bg-primary me-2">
+                    총 <span id="totalCount" th:text="${notifications.size()}">0</span>개
+                </span>
+                <span class="badge bg-success me-2">
+                    완료 <span id="sentCount">0</span>개
+                </span>
+                <span class="badge bg-warning">
+                    대기 <span id="pendingCount">0</span>개
+                </span>
+            </div>
+        </div>
+
+        <!-- 알림 목록 -->
+        <div id="notificationsList">
+            <div th:if="${notifications.empty}" class="empty-state">
+                <i class="fas fa-bell-slash"></i>
+                <h4>알림이 없습니다</h4>
+                <p>아직 전송된 알림이 없습니다. 첫 번째 알림을 작성해보세요!</p>
+                <a href="/notifications/create" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>알림 작성하기
+                </a>
+            </div>
+            
+            <div th:each="notification : ${notifications}" 
+                 th:class="'notification-card card ' + (${notification.type == 'WARNING'} ? 'warning' : '') + (${notification.type == 'ERROR'} ? 'error' : '')"
+                 th:data-status="${notification.status}"
+                 th:data-type="${notification.type}">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="d-flex align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="card-title mb-1" th:text="${notification.title}">알림 제목</h6>
+                                    <p class="card-text text-muted mb-2" th:text="${notification.message}">알림 메시지</p>
+                                    <div class="d-flex align-items-center">
+                                        <small class="text-muted me-3">
+                                            <i class="fas fa-user me-1"></i>
+                                            <span th:text="${notification.userId}">사용자</span>
+                                        </small>
+                                        <small class="text-muted me-3">
+                                            <i class="fas fa-clock me-1"></i>
+                                            <span th:text="${#temporals.format(notification.createdAt, 'yyyy-MM-dd HH:mm')}">생성 시간</span>
+                                        </small>
+                                        <small class="text-muted" th:if="${notification.sentAt}">
+                                            <i class="fas fa-paper-plane me-1"></i>
+                                            <span th:text="${#temporals.format(notification.sentAt, 'yyyy-MM-dd HH:mm')}">전송 시간</span>
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="mb-2">
+                                <span th:class="'badge type-badge ' + (${notification.type == 'INFO'} ? 'bg-primary' : '') + (${notification.type == 'WARNING'} ? 'bg-warning' : '') + (${notification.type == 'ERROR'} ? 'bg-danger' : '')"
+                                      th:text="${notification.type}">타입</span>
+                                <span th:class="'badge status-badge ' + (${notification.status == 'PENDING'} ? 'bg-warning' : '') + (${notification.status == 'SENT'} ? 'bg-success' : '') + (${notification.status == 'FAILED'} ? 'bg-danger' : '')"
+                                      th:text="${notification.status}">상태</span>
+                            </div>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button th:if="${notification.status == 'FAILED'}" 
+                                        class="btn btn-outline-primary" 
+                                        th:data-notification-id="${notification.id}"
+                                        onclick="resendNotification(this.dataset.notificationId)"
+                                        title="재전송">
+                                    <i class="fas fa-redo"></i>
+                                </button>
+                                <button class="btn btn-outline-danger" 
+                                        th:data-notification-id="${notification.id}"
+                                        onclick="deleteNotification(this.dataset.notificationId)"
+                                        title="삭제">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 삭제 확인 모달 -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">알림 삭제</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>정말로 이 알림을 삭제하시겠습니까?</p>
+                    <p class="text-muted">이 작업은 되돌릴 수 없습니다.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="button" class="btn btn-danger" id="confirmDelete">삭제</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentFilter = 'all';
+        let deleteNotificationId = null;
+        
+        // 상태별 필터링
+        function filterByStatus(status) {
+            currentFilter = status;
+            
+            // 버튼 활성화 상태 변경
+            document.querySelectorAll('.btn-group .btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // 알림 카드 필터링
+            const notifications = document.querySelectorAll('.notification-card');
+            notifications.forEach(card => {
+                const cardStatus = card.dataset.status;
+                if (status === 'all' || cardStatus === status) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            
+            updateCounts();
+        }
+        
+        // 통계 업데이트
+        function updateCounts() {
+            const notifications = document.querySelectorAll('.notification-card');
+            let total = 0, sent = 0, pending = 0, failed = 0;
+            
+            notifications.forEach(card => {
+                if (card.style.display !== 'none') {
+                    total++;
+                    const status = card.dataset.status;
+                    switch(status) {
+                        case 'SENT': sent++; break;
+                        case 'PENDING': pending++; break;
+                        case 'FAILED': failed++; break;
+                    }
+                }
+            });
+            
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('sentCount').textContent = sent;
+            document.getElementById('pendingCount').textContent = pending;
+        }
+        
+        // 알림 재전송
+        function resendNotification(id) {
+            if (confirm('이 알림을 재전송하시겠습니까?')) {
+                fetch(`/notifications/${id}/resend`, {
+                    method: 'POST'
+                }).then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        alert('재전송에 실패했습니다.');
+                    }
+                }).catch(error => {
+                    alert('재전송 중 오류가 발생했습니다: ' + error.message);
+                });
+            }
+        }
+        
+        // 알림 삭제
+        function deleteNotification(id) {
+            deleteNotificationId = id;
+            const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            deleteModal.show();
+        }
+        
+        // 삭제 확인
+        document.getElementById('confirmDelete').addEventListener('click', function() {
+            if (deleteNotificationId) {
+                fetch(`/notifications/${deleteNotificationId}/delete`, {
+                    method: 'POST'
+                }).then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        alert('삭제에 실패했습니다.');
+                    }
+                }).catch(error => {
+                    alert('삭제 중 오류가 발생했습니다: ' + error.message);
+                });
+            }
+        });
+        
+        // 초기화
+        updateCounts();
+    </script>
+</body>
+</html> 

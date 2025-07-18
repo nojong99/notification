@@ -10,4 +10,5 @@ public class NotificationMessage {
     private String type; // EMAIL, SMS, PUSH
     private String email;
     private String phoneNumber;
+    private Long notificationId; // 알림 ID 추가
 } 

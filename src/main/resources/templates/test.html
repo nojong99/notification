@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title}">API 테스트</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .test-card {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .response-area {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            min-height: 100px;
+            white-space: pre-wrap;
+        }
+        .method-badge {
+            font-size: 0.8em;
+        }
+    </style>
+</head>
+<body>
+    <!-- 네비게이션 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-bell me-2"></i>알림 시스템
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">대시보드</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/test">API 테스트</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/h2-console" target="_blank">데이터베이스</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        <h1 class="mb-4">
+            <i class="fas fa-flask me-2"></i>API 테스트
+        </h1>
+
+        <!-- 서버 상태 테스트 -->
+        <div class="test-card">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <span class="badge bg-success method-badge me-2">GET</span>
+                        서버 상태 확인
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">서버가 정상적으로 실행 중인지 확인합니다.</p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>엔드포인트:</strong> <code>/api/test/health</code>
+                        </div>
+                        <div class="col-md-6">
+                            <button class="btn btn-primary" onclick="testHealth()">
+                                <i class="fas fa-play me-1"></i>테스트 실행
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <strong>응답:</strong>
+                        <div id="health-response" class="response-area">응답이 여기에 표시됩니다...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 서버 정보 테스트 -->
+        <div class="test-card">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <span class="badge bg-success method-badge me-2">GET</span>
+                        서버 정보 조회
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">서버의 상세 정보를 조회합니다.</p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>엔드포인트:</strong> <code>/api/test/info</code>
+                        </div>
+                        <div class="col-md-6">
+                            <button class="btn btn-primary" onclick="testInfo()">
+                                <i class="fas fa-play me-1"></i>테스트 실행
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <strong>응답:</strong>
+                        <div id="info-response" class="response-area">응답이 여기에 표시됩니다...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Echo 테스트 -->
+        <div class="test-card">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <span class="badge bg-warning method-badge me-2">POST</span>
+                        Echo 테스트
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">요청 데이터를 그대로 반환하는 테스트입니다.</p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>엔드포인트:</strong> <code>/api/test/echo</code>
+                        </div>
+                        <div class="col-md-6">
+                            <button class="btn btn-warning" onclick="testEcho()">
+                                <i class="fas fa-play me-1"></i>테스트 실행
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <strong>요청 데이터:</strong>
+                        <textarea id="echo-data" class="form-control" rows="3">{"name": "테스트 사용자", "message": "안녕하세요!", "timestamp": "2024-01-01 12:00:00"}</textarea>
+                    </div>
+                    <div class="mt-3">
+                        <strong>응답:</strong>
+                        <div id="echo-response" class="response-area">응답이 여기에 표시됩니다...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 알림 전송 테스트 -->
+        <div class="test-card">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <span class="badge bg-warning method-badge me-2">POST</span>
+                        알림 전송 테스트
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">특정 사용자에게 알림을 전송합니다.</p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>엔드포인트:</strong> <code>/api/notifications/send/user/{userId}</code>
+                        </div>
+                        <div class="col-md-6">
+                            <button class="btn btn-warning" onclick="testNotification()">
+                                <i class="fas fa-paper-plane me-1"></i>알림 전송
+                            </button>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-3">
+                            <label class="form-label">사용자 ID:</label>
+                            <input type="text" id="user-id" class="form-control" value="user123">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">제목:</label>
+                            <input type="text" id="notification-title" class="form-control" value="테스트 알림">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">메시지:</label>
+                            <input type="text" id="notification-message" class="form-control" value="안녕하세요!">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">타입:</label>
+                            <select id="notification-type" class="form-select">
+                                <option value="INFO">정보</option>
+                                <option value="WARNING">경고</option>
+                                <option value="ERROR">오류</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <strong>응답:</strong>
+                        <div id="notification-response" class="response-area">응답이 여기에 표시됩니다...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 전체 테스트 실행 -->
+        <div class="text-center mt-5">
+            <button class="btn btn-success btn-lg" onclick="runAllTests()">
+                <i class="fas fa-rocket me-2"></i>모든 테스트 실행
+            </button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const baseUrl = 'http://localhost:8080';
+
+        function updateResponse(elementId, data) {
+            const element = document.getElementById(elementId);
+            element.textContent = JSON.stringify(data, null, 2);
+        }
+
+        function showError(elementId, error) {
+            const element = document.getElementById(elementId);
+            element.textContent = `오류: ${error}`;
+        }
+
+        async function testHealth() {
+            try {
+                const response = await fetch(`${baseUrl}/api/test/health`);
+                const data = await response.json();
+                updateResponse('health-response', data);
+            } catch (error) {
+                showError('health-response', error.message);
+            }
+        }
+
+        async function testInfo() {
+            try {
+                const response = await fetch(`${baseUrl}/api/test/info`);
+                const data = await response.json();
+                updateResponse('info-response', data);
+            } catch (error) {
+                showError('info-response', error.message);
+            }
+        }
+
+        async function testEcho() {
+            try {
+                const requestData = JSON.parse(document.getElementById('echo-data').value);
+                const response = await fetch(`${baseUrl}/api/test/echo`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                const data = await response.json();
+                updateResponse('echo-response', data);
+            } catch (error) {
+                showError('echo-response', error.message);
+            }
+        }
+
+        async function testNotification() {
+            try {
+                const userId = document.getElementById('user-id').value;
+                const title = document.getElementById('notification-title').value;
+                const message = document.getElementById('notification-message').value;
+                const type = document.getElementById('notification-type').value;
+
+                const url = `${baseUrl}/api/notifications/send/user/${userId}?title=${encodeURIComponent(title)}&message=${encodeURIComponent(message)}&type=${encodeURIComponent(type)}`;
+                
+                const response = await fetch(url, {
+                    method: 'POST'
+                });
+                const data = await response.text();
+                updateResponse('notification-response', { message: data });
+            } catch (error) {
+                showError('notification-response', error.message);
+            }
+        }
+
+        async function runAllTests() {
+            await testHealth();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await testInfo();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await testEcho();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await testNotification();
+        }
+    </script>
+</body>
+</html> 

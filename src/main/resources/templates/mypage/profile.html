@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>프로필 수정 - <span th:text="${user.username}">사용자</span></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: #dc3545;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 0.7rem;
+            min-width: 18px;
+            text-align: center;
+        }
+        .profile-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        .form-card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+    </style>
+</head>
+<body>
+    <!-- 네비게이션 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-bell me-2"></i>알림 시스템
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">대시보드</a>
+                    </li>
+                    <li class="nav-item" th:if="${user.role == 'ADMIN'}">
+                        <a class="nav-link" href="/notifications/create">알림 작성</a>
+                    </li>
+                    <li class="nav-item" th:if="${user.role == 'ADMIN'}">
+                        <a class="nav-link" href="/notifications/list">알림 목록</a>
+                    </li>
+                    <li class="nav-item" th:if="${user.role == 'ADMIN'}">
+                        <a class="nav-link" href="/users/list">사용자 관리</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle position-relative" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-bell"></i>
+                            <span th:if="${unreadCount > 0}" class="notification-badge" th:text="${unreadCount}">0</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown">
+                            <li><h6 class="dropdown-header">알림</h6></li>
+                            <li th:if="${notifications.empty}"><span class="dropdown-item-text">새로운 알림이 없습니다</span></li>
+                            <li th:each="notification : ${notifications.subList(0, Math.min(5, notifications.size()))}">
+                                <a class="dropdown-item" href="/mypage/notifications">
+                                    <div class="d-flex justify-content-between">
+                                        <span th:text="${notification.title}">제목</span>
+                                        <small class="text-muted" th:text="${#temporals.format(notification.createdAt, 'HH:mm')}">시간</small>
+                                    </div>
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/mypage/notifications">모든 알림 보기</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/mypage">
+                            <i class="fas fa-user me-1"></i><span th:text="${user.username}">사용자</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <form th:action="@{/logout}" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-outline-light btn-sm">
+                                <i class="fas fa-sign-out-alt me-1"></i>로그아웃
+                            </button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        <!-- 프로필 카드 -->
+        <div class="profile-card">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h2><i class="fas fa-user-edit me-2"></i>프로필 수정</h2>
+                    <p class="mb-0">개인 정보를 수정할 수 있습니다.</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a href="/mypage" class="btn btn-light">
+                        <i class="fas fa-arrow-left me-1"></i>마이페이지로
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 프로필 수정 폼 -->
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card form-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-user-cog me-2"></i>개인 정보 수정
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form th:action="@{/mypage/profile}" method="post" th:object="${user}">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="username" class="form-label">
+                                        <i class="fas fa-user me-1"></i>사용자명
+                                    </label>
+                                    <input type="text" class="form-control" id="username" 
+                                           th:field="*{username}" readonly>
+                                    <div class="form-text">사용자명은 변경할 수 없습니다.</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="email" class="form-label">
+                                        <i class="fas fa-envelope me-1"></i>이메일
+                                    </label>
+                                    <input type="email" class="form-control" id="email" 
+                                           th:field="*{email}" required>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="phoneNumber" class="form-label">
+                                        <i class="fas fa-phone me-1"></i>전화번호
+                                    </label>
+                                    <input type="tel" class="form-control" id="phoneNumber" 
+                                           th:field="*{phoneNumber}" placeholder="010-1234-5678">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="role" class="form-label">
+                                        <i class="fas fa-user-tag me-1"></i>권한
+                                    </label>
+                                    <input type="text" class="form-control" id="role" 
+                                           th:value="${user.role == 'ADMIN' ? '관리자' : '일반 사용자'}" readonly>
+                                    <div class="form-text">권한은 관리자가 변경할 수 있습니다.</div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="active" class="form-label">
+                                        <i class="fas fa-toggle-on me-1"></i>계정 상태
+                                    </label>
+                                    <input type="text" class="form-control" id="active" 
+                                           th:value="${user.active ? '활성' : '비활성'}" readonly>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="createdAt" class="form-label">
+                                        <i class="fas fa-calendar-plus me-1"></i>가입일
+                                    </label>
+                                    <input type="text" class="form-control" id="createdAt" 
+                                           th:value="${#temporals.format(user.createdAt, 'yyyy-MM-dd HH:mm')}" readonly>
+                                </div>
+                            </div>
+                            
+                            <hr>
+                            
+                            <div class="d-flex justify-content-between">
+                                <a href="/mypage" class="btn btn-secondary">
+                                    <i class="fas fa-times me-1"></i>취소
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-1"></i>저장
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 실시간 알림 업데이트 (5초마다)
+        setInterval(function() {
+            fetch('/mypage/notifications/count')
+                .then(response => response.json())
+                .then(data => {
+                    const badge = document.querySelector('.notification-badge');
+                    if (data.unreadCount > 0) {
+                        if (badge) {
+                            badge.textContent = data.unreadCount;
+                        } else {
+                            const newBadge = document.createElement('span');
+                            newBadge.className = 'notification-badge';
+                            newBadge.textContent = data.unreadCount;
+                            document.querySelector('.fa-bell').parentNode.appendChild(newBadge);
+                        }
+                    } else {
+                        if (badge) {
+                            badge.remove();
+                        }
+                    }
+                });
+        }, 5000);
+    </script>
+</body>
+</html> 
