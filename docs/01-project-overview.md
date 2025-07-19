@@ -12,6 +12,7 @@
 ├── 웹 인터페이스 (Thymeleaf + Bootstrap)
 ├── Spring Boot 백엔드
 ├── H2 데이터베이스 (로컬 테스트용)
+├── MongoDB 데이터베이스 (배포용)
 ├── Spring Security (로그인/권한 관리)
 └── 알림 관리 시스템
 ```
